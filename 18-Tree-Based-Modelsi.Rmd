@@ -1,0 +1,211 @@
+---
+"AĞAÇ TABANLI METOTLAR (TREE-BASED METHODS)"
+---
+```{r}
+df<-read.table("spamD.tsv", header = T, sep="\t")
+dim(df)
+```
+```{r}
+df$isSpam<-df$spam=="spam"
+head(df$isSpam)
+```
+```{r}
+df_train<-subset(df,df$rgroup>=10)
+df_test<-subset(df,df$rgroup<10)
+X<-setdiff(colnames(df),list("rgroup","spam","isSpam"))
+library(wrapr)
+formula<-mk_formula("isSpam",X)
+```
+
+```{r}
+library(rpart)
+model_tree<-rpart(formula, df_train, method = "class")
+library(rpart.plot)
+rpart.plot(model_tree,type = 5, extra = 6)
+```
+```{r}
+pred<-predict(model_tree, newdata = df_train)[,2]
+cm<-table(truth=df_train$spam=="spam", pred=(pred>0.5))
+cm
+```
+```{r}
+accuracy<-sum(diag(cm))/sum(cm)
+precision<-cm[2,2]/sum(cm[,2])
+recall<-cm[2,2]/sum(cm[2,])
+f1<-2*precision*recall/(precision+recall)
+data.frame(model="tree train", accuracy=accuracy, f1=f1)
+```
+```{r}
+measures<-function(pred,truth,name){
+  cm<-table(truth=truth, pred=(pred>0.5))
+  accuracy<-sum(diag(cm))/sum(cm)
+  precision<-cm[2,2]/sum(cm[,2])
+  recall<-cm[2,2]/sum(cm[2,])
+  f1<-2*precision*recall/(precision+recall)
+  data.frame(model=name, accuracy=accuracy, f1=f1)
+}
+```
+
+```{r}
+measures(pred, df_train$spam=="spam","tree train")
+```
+```{r}
+pred<-predict(model_tree, newdata = df_test)[,2]
+measures(pred, df_test$spam=="spam","tree test")
+```
+```{r}
+ntrain<-dim(df_train)[1]
+n<-ntrain
+ntree<-100
+samples<-sapply(1:ntree, FUN=function(iter){sample(1:ntrain,
+                                                   size=n,
+                                                   replace = TRUE)})
+treelist<-lapply(1:ntree, FUN=function(iter){
+  samp<-samples[,iter];
+  rpart(formula, df_train[samp,], method = "class")
+})
+```
+
+```{r}
+preds<-sapply(1:length(treelist), function(iter){
+  predict(treelist[[iter]],newdata=df_train)[,2]
+})
+
+predsums<-rowSums(preds)
+pred<-predsums/length(treelist)
+```
+
+```{r}
+measures(pred, df_train$spam=="spam","bagging train")
+```
+```{r}
+preds<-sapply(1:length(treelist), function(iter){
+  predict(treelist[[iter]],newdata=df_test)[,2]
+})
+
+predsums<-rowSums(preds)
+pred<-predsums/length(treelist)
+measures(pred, df_test$spam=="spam","bagging test")
+```
+```{r}
+library(randomForest)
+set.seed(1234)
+fmodel<-randomForest(
+  x=df_train[,X],
+  y=as.factor(df_train$spam),
+  ntree = 100,
+  nodesize=7,
+  importance = TRUE
+)
+```
+
+```{r}
+pred<-predict(fmodel, df_train[,X], type="prob")[,"spam"]
+measures(pred, df_train$spam=="spam","forest train")
+```
+```{r}
+pred<-predict(fmodel, df_test[,X], type="prob")[,"spam"]
+measures(pred, df_test$spam=="spam","forest test")
+```
+
+```{r}
+varImp<-importance(fmodel)
+varImp[1:10,]
+varImpPlot(fmodel, type = 1)
+```
+```{r}
+sorted<-sort(varImp[,"MeanDecreaseAccuracy"], decreasing = TRUE)
+selVals<-names(sorted)[1:30]
+fsel<-randomForest(
+  x=df_train[,selVals],
+  y=as.factor(df_train$spam),
+  ntree = 100,
+  nodesize=7,
+  importance = TRUE
+)
+```
+
+```{r}
+pred<-predict(fsel, df_train[,X], type="prob")[,"spam"]
+measures(pred, df_train$spam=="spam","RF train")
+```
+
+```{r}
+pred<-predict(fsel, df_test[,X], type="prob")[,"spam"]
+measures(pred, df_test$spam=="spam","RF test")
+```
+
+tree train	0.8995897	0.8691001	
+tree test	  0.871179	0.8279883	
+
+bagging train	0.9160029	0.8904282	
+bagging test	0.9082969	0.8757396	
+
+forest train	0.9876901	0.9842544
+forest test	  0.9563319	0.9431818	
+
+RF train	0.9855177	0.9814586	
+RF test	  0.9606987	0.9488636	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

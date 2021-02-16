@@ -1,0 +1,256 @@
+---
+"Verileri Yönetmek (Managing Data)" by Tirendaz Akademi
+---
+#Veri Temizleme (Cleaning Data)
+
+## Alana Özgü Veri Temizleme (Domain-Specific Data Cleaning)
+
+```{r}
+data=readRDS("custdata.RDS")
+head(data, n=10)
+```
+```{r}
+str(data)
+```
+```{r}
+head(data$gas_usage, n=100)
+```
+```{r}
+summary(data$age)
+```
+```{r}
+summary(data$income)
+```
+```{r}
+library(dplyr)
+data<-data %>%
+  mutate(age=na_if(age,0), income=ifelse(income<0, NA, income))
+```
+
+```{r}
+data<-data %>% 
+  mutate(gas_with_rent=(gas_usage==1),
+         gas_with_electricity=(gas_usage==2),
+         no_gas_bill=(gas_usage==3)) %>%
+  mutate( gas_usage = ifelse (gas_usage<4, NA, gas_usage))
+```
+
+```{r}
+head(data$gas_usage)
+```
+```{r}
+str(data)
+```
+## Eksik Veriler (Missing Values)
+
+```{r}
+sum(is.na(data$age))
+```
+```{r}
+missing=function(df) {sapply(df, FUN=function(col) sum(is.na(col)))}
+n_na<-missing(data)
+n_na
+```
+### vtreat Paketi (vtreat Package)
+
+```{r}
+varlist<-setdiff(colnames(data),c("custid","health_ins"))
+```
+
+```{r}
+library(vtreat)
+plan<-design_missingness_treatment(data, varlist = varlist)
+training_prepared<-prepare(plan,data)
+head(training_prepared, n=10)
+```
+```{r}
+head(training_prepared$housing_type, n=70)
+```
+
+```{r}
+missing=function(df) {sapply(df, FUN=function(col) sum(is.na(col)))}
+n_na<-missing(training_prepared)
+n_na
+```
+#Veri Dönüştürme (Data Transformations)
+
+```{r}
+median_income_table<-readRDS("median_income.RDS")
+head(median_income_table)
+```
+```{r}
+training_prepared<-training_prepared %>% 
+  left_join(.,median_income_table, by='state_of_res') %>%
+  mutate(income_normalized=income/median_income)
+head(training_prepared[,c("income","median_income","income_normalized")])
+```
+## Normalleştiştirme (Normalization)
+
+```{r}
+summary(training_prepared$age)
+```
+```{r}
+mean_age<-mean(training_prepared$age)
+age_normalized<-training_prepared$age/mean_age
+summary(age_normalized)
+```
+```{r}
+(mean_age<-mean(training_prepared$age))
+(sd_age<- sd(training_prepared$age))
+print(mean_age+c(-sd_age,sd_age))
+```
+```{r}
+training_prepared$scaled_age<-(training_prepared$age-mean_age)/sd_age
+head(training_prepared$scaled_age, n=10)
+```
+```{r}
+df<-training_prepared[,c("age","income","num_vehicles","gas_usage")]
+summary(df)
+```
+```{r}
+df_scaled<-scale(df,center=TRUE,scale=TRUE)
+summary(df_scaled)
+```
+##Merkezileştirme (Centering)
+
+```{r}
+(means<-attr(df_scaled, "scaled:center"))
+(sds<-attr(df_scaled, "scaled:scale"))
+```
+##Veri Setini Parçalama (Split Data Set)
+
+```{r}
+set.seed(1234)
+data$gp<-runif(nrow(data))
+head(data$gp)
+```
+```{r}
+data_test<-subset(data, gp<=0.2)
+data_train<-subset(data,gp>0.2)
+(dim(data_test))
+(dim(data_train))
+```
+```{r}
+household_data<-readRDS("hhdata.RDS")
+head(household_data)
+```
+```{r}
+hh<-unique(household_data$household_id)
+head(hh)
+```
+```{r}
+set.seed(1234)
+households<-data.frame(household_id=hh, gp=runif(length(hh)),stringsAsFactors = FALSE)
+head(households)
+```
+```{r}
+household_data<-left_join(household_data, households, by="household_id")
+head(household_data)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

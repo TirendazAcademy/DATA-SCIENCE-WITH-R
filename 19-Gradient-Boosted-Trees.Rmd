@@ -1,0 +1,161 @@
+---
+"Gradient-boosted trees"
+---
+```{r}
+head(iris)
+```
+```{r}
+str(iris)
+```
+```{r}
+iris$class<-as.numeric(iris$Species=="setosa")
+head(iris)
+```
+```{r}
+set.seed(1234)
+intrain<-runif(nrow(iris))<0.75
+train<-iris[intrain,]
+test<-iris[!intrain,]
+(dim(train))
+(dim(test))
+```
+
+```{r}
+input<-as.matrix(train[,1:4])
+library(xgboost)
+```
+
+```{r}
+cv<-xgb.cv(input,
+           label = train$class,
+           params = list(objective="binary:logistic"),
+           nfold = 5,
+           nrounds = 100,
+           print_every_n = 10,
+           metrics = "logloss")
+evalframe<-as.data.frame(cv$evaluation_log)
+head(evalframe)
+```
+```{r}
+(NROUNDS<-which.min(evalframe$test_logloss_mean))
+```
+
+```{r}
+model<-xgboost(input,
+           label = train$class,
+           params = list(objective="binary:logistic"),
+           nrounds = NROUNDS,
+           verbose = FALSE)
+```
+
+```{r}
+test_input<-as.matrix(test[,1:4])
+pred<-predict(model,test_input)
+```
+
+```{r}
+measures <- function(pred, truth, name = "model") {
+  cm <- table(truth = truth,pred = (pred > 0.5))
+  accuracy <- sum(diag(cm)) / sum(cm)
+  precision <- cm[2, 2] / sum(cm[, 2])
+  recall <- cm[2, 2] / sum(cm[2, ])
+  f1 <- 2 * precision * recall / (precision + recall)
+  data.frame(model = name, accuracy = accuracy, f1 = f1)
+}
+```
+
+```{r}
+measures(pred, test$class)
+```
+```{r}
+library(zeallot)
+c(texts, labels) %<-% readRDS("IMDBtrain.RDS") 
+```
+
+```{r}
+list(text=texts[1], label=labels[1])
+```
+```{r}
+source("lime_imdb_example.R")
+vocad<-create_pruned_vocabulary(texts)
+dtm_train<-make_matrix(texts, vocad)
+```
+
+```{r}
+cv<-xgb.cv(dtm_train,
+           label = labels,
+           params = list(objective="binary:logistic"),
+           nfold = 5,
+           nrounds = 500,
+           early_stopping_rounds = 20,
+           print_every_n = 10,
+           metrics = "logloss")
+evalframe<-as.data.frame(cv$evaluation_log)
+(NROUNDS<-which.min(evalframe$test_logloss_mean))
+```
+```{r}
+model<-xgboost(dtm_train,
+           label = labels,
+           params = list(objective="binary:logistic"),
+           nrounds = NROUNDS,
+           verbose = FALSE)
+```
+```{r}
+pred <- predict(model, dtm_train)
+measures(pred, labels,"training")
+```
+```{r}
+c(test_texts, test_labels) %<-% readRDS("IMDBtest.RDS")
+dtm_test<-make_matrix(test_texts, vocad)
+pred<-predict(model, dtm_test)
+measures(pred, test_labels, "test")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

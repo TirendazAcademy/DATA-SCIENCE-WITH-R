@@ -1,0 +1,352 @@
+---
+Konu: "Veri Tabanları ile Çalışmak"
+Anlatan: "Tirendaz Akademi"
+---
+
+```{r}
+library(DBI)
+con<-dbConnect(RSQLite::SQLite(), "mydatabase.db")
+summary(con)
+```
+```{r}
+dbListTables(con)
+```
+```{r}
+dbListFields(con, "ecom")
+```
+```{r}
+dbReadTable(con, "COMPANY")
+```
+```{r}
+dbGetQuery(con, "SELECT * FROM ecom LIMIT 10")
+```
+
+```{r}
+sorgu<-dbSendQuery(con, "SELECT * FROM ecom")
+dbFetch(sorgu, n=10)
+```
+```{r}
+dbFetch(sorgu, n=10)
+```
+
+#SORGULAR
+
+```{r}
+dbHasCompleted(sorgu)
+```
+```{r}
+dbGetInfo(sorgu)
+```
+```{r}
+dbGetStatement(sorgu)
+```
+```{r}
+dbGetRowsAffected(sorgu)
+```
+```{r}
+dbColumnInfo(sorgu)
+```
+```{r}
+dbClearResult(sorgu)
+```
+
+```{r}
+dbGetInfo(sorgu)
+```
+
+#TABLOLAR
+
+```{r}
+dbExistsTable(con, "demo_db")
+```
+```{r}
+x<-1:10
+y<-letters[1:10]
+demo_veri<-tibble::tibble(x,y)
+demo_veri
+```
+```{r}
+dbWriteTable(con, "demo_db", demo_veri)
+dbListTables(con)
+```
+```{r}
+x<-sample(80,10)
+y<-letters[11:20]
+demo2_veri<-tibble::tibble(x,y)
+demo2_veri
+```
+```{r}
+dbWriteTable(con, "demo_db", demo2_veri, overwrite=TRUE)
+dbGetQuery(con,"SELECT * FROM demo_db")
+```
+
+```{r}
+x<-sample(100,10)
+y<-letters[5:14]
+demo3_veri<-tibble::tibble(x,y)
+demo3_veri
+```
+```{r}
+dbWriteTable(con, "demo_db", demo3_veri, append=TRUE)
+dbGetQuery(con,"SELECT * FROM demo_db")
+```
+
+```{r}
+dbExecute(con, "INSERT INTO demo_db (x,y) VALUES (12,'c'), (34,'k'), (56, 'h')")
+dbGetQuery(con,"SELECT * FROM demo_db")
+```
+
+```{r}
+dbRemoveTable(con, "demo_db")
+dbListTables(con)
+```
+#VERİ TİPLERİ
+
+```{r}
+dbDataType(RSQLite::SQLite(), 1.5)
+```
+
+#VERİ DÖNÜŞÜMÜ 
+
+```{r}
+library(dplyr)
+ecom2<-tbl(con, "ecom")
+ecom2
+```
+
+```{r}
+s<-ecom2 %>% 
+  select(referrer, device, duration) %>%
+  filter(device=='laptop') %>%
+  group_by(referrer) %>%
+  summarise(avg_tos=mean(duration)) %>%
+  arrange(avg_tos)
+```
+
+```{r}
+show_query(s)
+```
+```{r}
+result<-ecom2 %>%
+  select(referrer,device)
+result
+```
+#VERİ GÖRSELLEŞTİRME
+
+```{r}
+library(ggplot2)
+library(dbplot)
+```
+
+```{r}
+ecom2 %>%
+  dbplot_bar(device)+
+  xlab("Device")+
+  ylab("Count")+
+  ggtitle("Device Distribution")
+```
+```{r}
+ecom2 %>%
+  dbplot_line(n_visit)+
+  xlab("Visits")+
+  ylab("Counts")
+```
+
+#MODELLEME
+
+```{r}
+library(modeldb)
+ecom2 %>% 
+  select(duration, n_visit) %>%
+  linear_regression_db(duration)
+```
+
+```{r}
+ecom2 %>% 
+  select(duration, n_visit, n_pages) %>%
+  linear_regression_db(duration)
+```
+```{r}
+ecom2 %>% 
+  select(duration, device) %>%
+  add_dummy_variables(device, values=c("laptop","mobile","tablet")) %>%
+  linear_regression_db(duration)
+```
+```{r}
+ecom2 %>% 
+  select(duration, device, n_visit, n_pages) %>%
+  add_dummy_variables(device, values=c("laptop","mobile","tablet")) %>%
+  linear_regression_db(duration, auto_count = TRUE)
+```
+```{r}
+model<-lm(duration~device+referrer+ n_visit+ n_pages, data=ecom2)
+model
+```
+```{r}
+library(tidypredict)
+ecom2 %>%
+  tidypredict_to_column(model) %>%
+  select(duration, fit)
+```
+
+```{r}
+tidypredict_sql(model, con)
+```
+```{r}
+dbDisconnect(con)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

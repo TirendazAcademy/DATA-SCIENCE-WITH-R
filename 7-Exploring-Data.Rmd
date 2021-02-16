@@ -1,0 +1,126 @@
+---
+Başlık : "Verideki Bilgileri Keşfetme"
+Anlatan : "Tirendaz Akademi"
+---
+#Veri Setini Tanıma
+
+```{r}
+veri<-readRDS("custdata.RDS")
+str(veri)
+```
+#Tek Değişken için Grafikler
+
+## Histogram Grafikleri
+
+```{r}
+library(ggplot2)
+ggplot(veri, aes(x=gas_usage))+
+  geom_histogram(binwidth = 10, fill="red")
+```
+## Yoğunluk Grafikleri
+
+```{r}
+library(scales)
+ggplot(veri, aes(x=income))+
+  geom_density()+
+  scale_x_continuous(labels=dollar)
+```
+```{r}
+ggplot(veri, aes(x=income))+geom_density()+
+  scale_x_log10(breaks=c(10,100,1000,10000,10000,1000000),labels=dollar)
+```
+
+##Bar Grafikleri
+
+```{r}
+ggplot(veri, aes(x=marital_status))+geom_bar(fill="red")
+```
+
+```{r}
+ggplot(veri, aes(x=state_of_res))+geom_bar(fill="red")+coord_flip()
+```
+
+##Nokta Grafikleri
+
+```{r}
+library(WVPlots)
+ClevelandDotPlot(veri, "state_of_res",sort=1, title="İkamet", color = "red")+
+  coord_flip()
+```
+
+##Çizgi Grafikleri
+
+```{r}
+x<-runif(100)
+y<-x^2+0.2*x
+ggplot(data.frame(x=x,y=y),aes(x=x,y=y))+geom_line()
+```
+# İki Değişken için Grafikler
+
+```{r}
+veri2<-subset(veri, 0<age & age<100 & 0 < income & income <200000)
+cor(veri2$age, veri2$income)
+```
+
+## Nokta Grafikleri
+
+```{r}
+set.seed(1234)
+data<-dplyr::sample_frac(veri2, size=0.1, replace=FALSE)
+ggplot(data, aes(x=age,y=income))+geom_point()+
+  geom_smooth()+
+  ggtitle("Yaş ile Gelir İlişkisi")
+```
+## Hexbin Grafikleri
+
+```{r}
+library(hexbin)
+HexBinPlot(veri2, "age","income", "Gelir & Yaş")+geom_smooth(color="black",se=FALSE)
+```
+
+## Bar Grafikleri
+
+```{r}
+ggplot(veri, aes(x=marital_status, fill=health_ins))+
+  geom_bar(position = "dodge")
+```
+```{r}
+ShadowPlot(veri, "marital_status", "health_ins", title="Medeni Durum & S. Sigorta")
+```
+```{r}
+ggplot(veri, aes(x=marital_status, fill=health_ins))+
+  geom_bar(position = "fill")
+```
+
+```{r}
+veri3<-subset(veri, !is.na(housing_type))
+ggplot(veri3, aes(x=housing_type, fill=marital_status))+geom_bar(position = "dodge")+
+  scale_fill_brewer(palette = "Set1")+
+  coord_flip()
+```
+```{r}
+ggplot(veri3, aes(x=marital_status))+geom_bar(fill="red")+
+  facet_wrap(veri3$housing_type, scale="free_x")+
+  coord_flip()
+```
+
+# İki Sürekli Değişken için Grafikler
+
+## Çizgi Grafikleri
+
+```{r}
+veri4<-subset(veri2, marital_status %in% c("Never married", "Widowed"))
+ggplot(veri4, aes(x=age, color=marital_status, linetype=marital_status))+
+  geom_density()+
+  scale_color_brewer(palette = "Dark2")
+```
+
+## Histogram Grafikleri
+
+```{r}
+ShadowHist(veri4,"age","marital_status", "Evlenmeyen & Dul", binwidth = 5)
+```
+
+```{r}
+ggplot(veri2, aes(x=age))+geom_density()+facet_wrap(~marital_status)
+```

@@ -1,0 +1,126 @@
+---
+Konu: "RSQLite ile Veri Tabanları"
+Anlatan: Tiredaz Akademi "https://youtube.com/c/TirendazAkademi"
+---
+
+#Veri setini yükleyelim
+
+```{r}
+library(RSQLite)
+library(DBI)
+data("mtcars")
+str(mtcars)
+```
+
+```{r}
+head(mtcars)
+```
+
+```{r}
+mtcars$car_names<-rownames(mtcars)
+rownames(mtcars)<-c()
+head(mtcars)
+```
+
+Veri tabanına bağlanıp Arabalar.db veri tabanı oluşturalım.
+
+```{r}
+con<-dbConnect(RSQLite::SQLite(), "Arabalar.db")
+```
+
+```{r}
+dbWriteTable(con,"cars_table", mtcars)
+```
+
+```{r}
+dbListTables(con)
+```
+```{r}
+car<-c("Camaro","California","Mustang","Explorer")
+make<-c("Chevrolet","Ferrari","Ford","Ford")
+df1<-data.frame(car,make)
+```
+
+```{r}
+car<-c("Corolla","Lancer","Sportage","XE")
+make<-c("Toyota","Misubishi","Kia","Jaguar")
+df2<-data.frame(car,make)
+```
+
+```{r}
+dfList<-list(df1,df2)
+
+for (k in 1:length(dfList)){
+  dbWriteTable(con, "Cars_Makes", dfList[[k]], append=TRUE)
+}
+dbListTables(con)
+```
+#SQL komutları çalışma
+
+```{r}
+dbGetQuery(con,"SELECT * FROM Cars_Makes")
+```
+
+```{r}
+dbGetQuery(con, "SELECT * FROM cars_table LIMIT 10")
+```
+
+```{r}
+dbGetQuery(con, "SELECT car_names, hp, cyl FROM cars_table WHERE cyl=8")
+```
+
+
+```{r}
+dbGetQuery(con, "SELECT car_names, gear, cyl 
+           FROM cars_table 
+           WHERE car_names LIKE 'H%' 
+           AND cyl IN (4,6)") 
+```
+```{r}
+s<-dbGetQuery(con, "SELECT cyl, AVG(hp) AS 'average_hp', AVG(mpg) AS 'average_mpg' FROM cars_table
+                  GROUP BY cyl
+                  ORDER BY average_hp")
+s
+```
+```{r}
+class(s)
+```
+#SQL komutlarında parametre kullanma
+
+```{r}
+mpg<-18
+cyl<-6
+Sonuc<-dbGetQuery(con, "SELECT car_names, mpg, cyl FROM cars_table 
+                  WHERE mpg>=? AND cyl>=?", params=c(mpg,cyl))
+```
+
+
+```{r}
+Sonuc
+```
+
+```{r}
+dbGetQuery(con, "SELECT * FROM cars_table LIMIT 10")
+```
+
+21.0	6	160.0	110	3.90	2.620	16.46	0	1	4 160.0	110	3.90	2.620	16.46	0	1	4	4	Mazda RX4
+
+```{r}
+dbExecute(con ,"DELETE FROM cars_table WHERE car_names='Mazda RX4'")
+```
+```{r}
+dbGetQuery(con, "SELECT * FROM cars_table LIMIT 10")
+```
+```{r}
+dbExecute(con, "INSERT INTO cars_table VALUES (21.0,6,160.0,110,3.90,2.620,16.46,0,1,4,4,'Mazda RX4')")
+```
+```{r}
+dbGetQuery(con, "SELECT * FROM cars_table")
+```
+
+#Veri tabanı ile bağlantıyı kesme
+
+```{r}
+dbDisconnect(con)
+```
+

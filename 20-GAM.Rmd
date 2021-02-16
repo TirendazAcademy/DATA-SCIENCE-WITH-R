@@ -1,0 +1,142 @@
+---
+"Genelleştirilmiş Toplamsal Modeller(Generalized additive models) (GAMs)"
+---
+```{r}
+set.seed(1234)
+x<-rnorm(1000)
+noise<-rnorm(1000,sd=1.5)
+y<-3*sin(2*x)+cos(0.75*x)-1.5*(x^2)+noise
+df<-data.frame(y=y, x=x)
+select<-runif(1000)
+train<-df[select>0.1,]
+test<-df[select<=0.1,]
+```
+
+```{r}
+lin_model<-lm(y~x, data=train)
+summary(lin_model)
+```
+```{r}
+rmse<-function(residuals){sqrt(mean(residuals^2))}
+train$pred_lin<-predict(lin_model, train)
+resid_lin<-with(train, y-pred_lin)
+rmse(resid_lin)
+```
+```{r}
+library(ggplot2)
+ggplot(train, aes(x=pred_lin, y=y))+
+  geom_point(alpha=0.3)+
+  geom_abline()
+```
+```{r}
+library(mgcv)
+gam_model<-gam(
+  y~s(x),data = train
+)
+gam_model$converged
+```
+```{r}
+summary(gam_model)
+```
+```{r}
+train$pred<-predict(gam_model, train)
+resid_gam<-with(train, y-pred)
+rmse(resid_gam)
+```
+
+lineer rmse 3.472547
+
+```{r}
+ggplot(train, aes(x=pred, y=y))+
+  geom_point(alpha=0.3)+
+  geom_abline()
+```
+```{r}
+test<-transform(test,
+                pred_lin=predict(lin_model,test),
+                pred_gam=predict(gam_model, test))
+test<-transform(test,
+                resid_lin=y-pred_lin,
+                resid_gam=y-pred_gam)
+rmse(test$resid_lin)
+rmse(test$resid_gam)
+```
+
+```{r}
+library(sigr)
+wrapFTest(test,"pred_lin","y")$R2
+wrapFTest(test,"pred_gam","y")$R2
+```
+
+train R^2: 83.6%
+test R^2 : 82.8%
+
+```{r}
+sx<-predict(gam_model, type = "terms")
+xframe<-cbind(train, sx=sx[,1])
+ggplot(xframe, aes(x=x))+
+  geom_point(aes(y=y),alpha=0.4)+
+  geom_line(aes(y=sx))
+```
+```{r}
+load("NatalBirthData.rData")
+head(sdata)
+```
+```{r}
+train<-sdata[sdata$ORIGRANDGROUP<=5,]
+test<-sdata[sdata$ORIGRANDGROUP>5,]
+form_lin<-as.formula("DBWT~PWGT+WTGAIN+MAGER+UPREVIS")
+linmodel<-lm(form_lin, data=train)
+summary(linmodel)
+```
+
+```{r}
+form_gam<-as.formula("DBWT~s(PWGT)+s(WTGAIN)+s(MAGER)+s(UPREVIS)")
+gammodel<-gam(form_gam, data=train)
+gammodel$converged
+```
+
+```{r}
+summary(gammodel)
+```
+
+```{r}
+test<-transform(test,
+                pred_lin=predict(linmodel,test),
+                pred_gam=predict(gammodel, test))
+test<-transform(test,
+                resid_lin=DBWT-pred_lin,
+                resid_gam=DBWT-pred_gam)
+rmse(test$resid_lin)
+rmse(test$resid_gam)
+```
+
+```{r}
+wrapFTest(test,"pred_lin","DBWT")$R2
+wrapFTest(test,"pred_gam","DBWT")$R2
+```
+
+```{r}
+form<-as.formula("DBWT<2000~PWGT+WTGAIN+MAGER+UPREVIS")
+logmod<-glm(form, data = train, family = binomial(link = "logit"))
+form2<-as.formula("DBWT<2000~s(PWGT)+s(WTGAIN)+s(MAGER)+s(UPREVIS)")
+glogmod<-gam(form2, data = train, family = binomial(link = "logit"))
+glogmod$converged
+```
+
+```{r}
+summary(glogmod)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

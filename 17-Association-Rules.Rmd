@@ -1,0 +1,138 @@
+---
+"Birliktelik Kuralları (Association Rules)"
+---
+```{r}
+library(arules)
+bookbaskets<-read.transactions("bookdata.tsv.gz", 
+                               format="single",
+                               header = T,
+                               sep = "\t",
+                               cols=c("userid","title"),
+                               rm.duplicates = T)
+class(bookbaskets)
+```
+```{r}
+bookbaskets
+```
+```{r}
+dim(bookbaskets)
+```
+
+```{r}
+colnames(bookbaskets)[1:5]
+```
+```{r}
+rownames(bookbaskets)[1:5]
+```
+```{r}
+basketSizes<-size(bookbaskets)
+summary(basketSizes)
+```
+```{r}
+quantile(basketSizes, probs = seq(0,1,0.1))
+```
+```{r}
+bookCount<-itemFrequency(bookbaskets,"absolute")
+summary(bookCount)
+```
+```{r}
+orderedBooks<-sort(bookCount, decreasing = T)
+knitr::kable(orderedBooks[1:10])
+```
+```{r}
+orderedBooks[1]/nrow(bookbaskets)
+```
+```{r}
+bookbaskets_use<-bookbaskets[basketSizes>1]
+dim(bookbaskets_use)
+```
+
+```{r}
+rules<-apriori(bookbaskets_use, 
+               parameter = list(support=0.002, confidence=0.75) )
+summary(rules)
+```
+```{r}
+measures<-interestMeasure(rules,
+                          measure = c("coverage","fishersExactTest"),
+                          transactions = bookbaskets_use)
+summary(measures)
+```
+```{r}
+library(magrittr)
+rules %>% 
+  sort(., by="confidence") %>% 
+  head(., n=5) %>% 
+  inspect(.)
+```
+
+```{r}
+brules<-apriori(bookbaskets_use, 
+                parameter = list(support=0.001, confidence=0.6),
+                appearance = list(rhs=c("The Lovely Bones: A Novel"),
+                                  default="lhs")
+                )
+summary(brules)
+```
+```{r}
+brules %>% 
+  sort(., by="confidence") %>% 
+  lhs(.) %>% 
+  head(., n=5) %>% 
+  inspect()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

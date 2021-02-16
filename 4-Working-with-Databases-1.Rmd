@@ -1,0 +1,182 @@
+---
+KONU: VERİ TABANLARI İLE ÇALIŞMAK
+ANLATAN: TİRENDAZ AKADEMİ (https://youtube.com/c/TirendazAkademi)
+---
+
+# R NOTEBOOK'U TANIYALIM
+
+```{r}
+"Merhaba Dünya!"
+```
+
+```{r}
+5+6
+```
+
+# R İLE VERİ TABANLARI
+
+```{r}
+library("DBI")
+```
+
+```{r}
+data<-readRDS("PUMSsample.RDS")
+```
+
+```{r}
+db<-dbConnect(RSQLite::SQLite(),":memory:")
+```
+
+```{r}
+dbWriteTable(db,"t1",as.data.frame(data$ss16pus))
+dbWriteTable(db,"t2,",as.data.frame(data$ss16hus))
+```
+
+```{r}
+dbListTables(db)
+```
+
+```{r}
+rm(list="data")
+```
+
+```{r}
+dbGetQuery(db,"SELECT * FROM t1 LIMIT 5")
+```
+
+# VERİ TABANINDAKİ VERİLER İLE ÇALIŞMAK 
+
+```{r}
+t1<-dbReadTable(db,"t1")
+```
+
+```{r}
+t1<-t1[,c("AGEP","COW","SCHL","SEX","PINCP","WKHP")]
+```
+
+```{r}
+colnames(t1)<-c("Yas","Istihdam","Egitim","Cinsiyet","Gelir","HCS")
+```
+
+```{r}
+str(t1)
+```
+```{r}
+t1$Istihdam<-strtrim(t1$Istihdam,50)
+```
+
+```{r}
+t1$Yas<-as.numeric(t1$Yas)
+t1$Gelir<-as.numeric(t1$Geli)
+t1$HCS<-as.numeric(t1$HCS)
+```
+
+```{r}
+str(t1)
+```
+# STANDART İŞÇİ KRİTERLERİNİ OLUŞTURALIM
+
+```{r}
+isci_level<-c(
+  "Employee of a private for-profit company or busine",
+  "Employee of a private not-for-profit, tax-exempt, ",
+  "Federal government employee",
+  "Local government employee (city, county, etc.)",
+  "Self-employed in own incorporated business, profes",
+  "Self-employed in own not incorporated business, pr",
+  "State government employee"
+)
+```
+
+```{r}
+tam_veri<-complete.cases(t1)
+str(tam_veri)
+```
+
+```{r}
+head(is.na(t1))
+```
+```{r}
+std_isci<-with(t1, 
+               (Gelir>1000) & (Gelir<=250000) &
+                 (HCS>=30) & 
+                 (Yas>=18) & (Yas<=65) & 
+                 (Istihdam %in% isci_level)
+                 )
+```
+
+```{r}
+veri<-t1[tam_veri & std_isci, , drop=FALSE]
+```
+
+#EĞİTİM DEĞİŞKENİNİ DÜZENLEYELİM
+
+```{r}
+no_advanced_degree<-is.na(veri$Egitim) | (!(veri$Egitim %in% c("Associate's degree", 
+                                                               "Bachelor's degree", 
+                                                               "Doctorate degree", 
+                                                               "Master's degree", 
+                                                               "Professional degree beyond a bachelor's degree")))
+```
+
+```{r}
+veri$Egitim[no_advanced_degree]<-"No Advanced Degree"
+```
+
+```{r}
+str(veri)
+```
+```{r}
+veri$Egitim<- relevel(factor(veri$Egitim), "No Advanced Degree")
+veri$Istihdam<-relevel(factor(veri$Istihdam), "State government employee")
+veri$Cinsiyet <- relevel(factor(veri$Cinsiyet), "Male")
+```
+
+```{r}
+str(veri)
+```
+
+```{r}
+saveRDS(veri, "veri_std_isci.RDS")
+```
+
+```{r}
+summary(veri)
+```
+
+#EĞİTİM DEĞİŞKENİNİ DUMMY DEĞİŞKENİNE ÇEVİRELİM
+
+```{r}
+levels(veri$Egitim)
+```
+
+```{r}
+head(veri$Egitim)
+```
+```{r}
+str(veri$Egitim)
+```
+
+```{r}
+d<-cbind(data.frame(Egitim=as.character(veri$Egitim), stringsAsFactors = FALSE),
+         model.matrix(~Egitim, veri))
+```
+
+```{r}
+d$'(Intercept)'<-NULL
+```
+
+```{r}
+head(d)
+```
+# VERİ SETİNDEKİ DEĞİŞKENLERDEN BİLGİ ÇIKARALIM
+
+```{r}
+table(Egitim=veri$Egitim, Cinsiyet=veri$Cinsiyet)
+```
+
+```{r}
+tapply(veri$Gelir, list(veri$Egitim, veri$Cinsiyet), FUN=mean)
+```
+
+

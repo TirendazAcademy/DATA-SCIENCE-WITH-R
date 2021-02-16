@@ -1,0 +1,122 @@
+---
+"DESTEK VEKTÖR MAKİNELERİ (SUPPORT VECTOR MACHINES)"
+---
+```{r}
+library(kernlab)
+data("spirals")
+sc<-specc(spirals, centers=2)
+s<-data.frame(x=spirals[,1], y=spirals[,2], class=as.factor(sc))
+```
+
+```{r}
+library(ggplot2)
+ggplot(data=s)+
+  geom_text(aes(x=x,y=y,label=class, color=class))+
+  scale_color_manual(values = c("red","blue"))+
+  theme_classic()+
+  theme(legend.position = "none")
+```
+```{r}
+set.seed(1234)
+s$group<-sample.int(100,size=dim(s)[[1]], replace = TRUE)
+s_train<-subset(s, group>10)
+s_test<-subset(s, group<=10)
+library(e1071)
+model<-
+  svm(class~x+y,data=s_train, kernel="linear", type="nu-classification")
+summary(model)
+```
+
+```{r}
+s_test$pred<-predict(model, newdata=s_test, type="response")
+table(pred=s_test$pred, truth=s_test$class)
+```
+```{r}
+shading<-expand.grid(x=seq(-1.5,1.5, by=0.01), 
+                     y=seq(-1.5,1.5, by=0.01))
+shading$pred<-predict(model, newdata=shading, type="response")
+
+ggplot(mapping=aes(x=x,y=y))+
+  geom_tile(data=shading, aes(fill=pred), 
+            show.legend = FALSE, alpha=0.5)+
+  scale_color_manual(values=c("red","blue"))+
+  geom_text(data=s,
+            aes(label=class, color=class), alpha=0.7)+
+  theme_classic()+
+  theme(legend.position = "none")
+```
+```{r}
+model<-
+  svm(class~x+y,data=s_train, kernel="radial", type="nu-classification",
+      gamma=1)
+s_test$pred<-predict(model, newdata=s_test, type="response")
+shading<-expand.grid(x=seq(-1.5,1.5, by=0.01), 
+                     y=seq(-1.5,1.5, by=0.01))
+shading$pred<-predict(model, newdata=shading, type="response")
+
+ggplot(mapping=aes(x=x,y=y))+
+  geom_tile(data=shading, aes(fill=pred), 
+            show.legend = FALSE, alpha=0.5)+
+  scale_color_manual(values=c("red","blue"))+
+  geom_text(data=s,
+            aes(label=class, color=class), alpha=0.7)+
+  theme_classic()+
+  theme(legend.position = "none")
+```
+```{r}
+model<-
+  svm(class~x+y,data=s_train, kernel="radial", type="nu-classification",
+      gamma=10)
+s_test$pred<-predict(model, newdata=s_test, type="response")
+shading<-expand.grid(x=seq(-1.5,1.5, by=0.01), 
+                     y=seq(-1.5,1.5, by=0.01))
+shading$pred<-predict(model, newdata=shading, type="response")
+
+ggplot(mapping=aes(x=x,y=y))+
+  geom_tile(data=shading, aes(fill=pred), 
+            show.legend = FALSE, alpha=0.5)+
+  scale_color_manual(values=c("red","blue"))+
+  geom_text(data=s,
+            aes(label=class, color=class), alpha=0.7)+
+  theme_classic()+
+  theme(legend.position = "none")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

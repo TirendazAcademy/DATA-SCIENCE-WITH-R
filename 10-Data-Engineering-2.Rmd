@@ -1,0 +1,382 @@
+---
+title: "Veri Mühendisliği-2 (Data Engineering -2)" by Tirendaz Akademi
+---
+#Verileri Gruplama
+
+```{r}
+head(iris)
+```
+```{r}
+iris_summary<-aggregate(cbind(Petal.Length, Petal.Width) ~ Species, 
+                        data=iris, FUN=mean)
+iris_summary
+```
+```{r}
+library("data.table")
+iris_dt<-as.data.table(iris)
+iris_dt<-iris_dt[, .(Petal.Length=mean(Petal.Length),
+                     Petal.Width=mean(Petal.Width)), 
+                 by=.(Species)]
+iris_dt
+```
+```{r}
+library("dplyr")
+iris_dplyr<-iris %>% 
+  group_by(.,Species) %>% 
+  summarize(.,Petal.Length=mean(Petal.Length),
+            Petal.Width=mean(Petal.Width)) %>% 
+  ungroup(.)
+iris_dplyr
+```
+#Çoklu Veri Dönüşümü
+
+```{r}
+ID<-1:5
+Mat<-sample(100,5)
+Sta<-sample(100,5)
+A<-data.frame(ID,Mat,Sta)
+A
+```
+
+```{r}
+Eng<-sample(100,5)
+B<-data.frame(ID,Mat,Eng)
+B
+```
+
+```{r}
+ID<-6:10
+Mat<-sample(100,5)
+Sta<-sample(100,5)
+C<-data.frame(ID,Mat,Sta)
+C
+```
+```{r}
+AC<-rbind(A,C)
+AC
+```
+```{r}
+bind_rows(list(A,C))
+```
+```{r}
+A$class<-c("A")
+C$class<-c("C")
+AC<-rbind(A,C)
+AC
+```
+```{r}
+t<-split(AC, AC$class)
+t
+```
+```{r}
+dt<-as.data.table(AC)
+f<-function(.BY,.SD){max(.SD$Mat)}
+dt[, max_mat :=f(.BY,.SD), by=class]
+dt
+```
+```{r}
+AC %>% 
+  group_by(.,class) %>% 
+  mutate(.,max_mat=max(Mat)) %>% 
+  ungroup(.)
+```
+```{r}
+cbind(A,B)
+```
+
+```{r}
+cbind(as.data.table(A),as.data.table(C))
+```
+```{r}
+bind_cols(list(A,C))
+```
+
+```{r}
+merge(A,B,by="ID")
+```
+```{r}
+ID<-c("a","b","c","d")
+CS<-c(85,90,95,80)
+D<-data.frame(ID,CS)
+
+ID<-c("a","b","c","e")
+CS<-c(80,90,90,70)
+E<-data.frame(ID,CS)
+
+(D)
+(E)
+```
+```{r}
+merge(D,E, by="ID", all.x = TRUE)
+```
+```{r}
+D_dt<-as.data.table(D)
+E_dt<-as.data.table(E)
+E_dt[D_dt, on="ID"]
+```
+```{r}
+left_join(D,E,by="ID")
+```
+```{r}
+merge(D,E, by="ID")
+```
+
+```{r}
+merge(D_dt,E_dt, by="ID")
+```
+```{r}
+inner_join(D,E,by="ID")
+```
+```{r}
+merge(D,E, by="ID", all=TRUE)
+```
+```{r}
+merge(D_dt,E_dt,by="ID", all=TRUE)
+```
+#Dönüşümleri Yeniden Şekillerdirme
+
+```{r}
+library("datasets")
+df<-Seatbelts
+head(df)
+```
+
+```{r}
+str(df)
+```
+```{r}
+library("xts")
+dates<-index(as.xts(time(df)))
+df<-data.frame(df)
+df$dates<-dates
+head(df)
+```
+```{r}
+head(df$dates)
+tail(df$dates)
+```
+```{r}
+df<-df[(df$dates>=as.yearmon("Oca 1982")) & 
+        (df$dates<=as.yearmon("Ara 1983")), , drop=FALSE ]
+str(df)
+```
+```{r}
+df$dates<-as.Date(df$dates)
+df$law<-ifelse(df$law==1, "new law", "pre law")
+df<-df[,c("dates","DriversKilled","front","rear","law")]
+head(df)
+```
+```{r}
+library("ggplot2")
+ggplot(df, aes(x=dates, y=DriversKilled, color =law, shape=law))+
+  geom_point()+
+  geom_smooth(se=FALSE)+
+  ggtitle("Aylık Sürücü Ölümleri")
+```
+```{r}
+df_long<-melt.data.table(as.data.table(df), id.vars = NULL,
+                         measure.vars = c("DriversKilled","front","rear"),
+                         variable.name = "victim_type",
+                         value.name = "nvictims")
+head(df_long)
+```
+```{r}
+library("cdata")
+df_long2<-unpivot_to_blocks(
+  df,
+  nameForNewKeyColumn = "victim_type",
+  nameForNewValueColumn = "nvictims",
+  columnsToTakeFrom = c("DriversKilled","front","rear")
+)
+head(df_long2)
+```
+```{r}
+library("tidyr")
+df_long3<-gather(
+  df,
+  key=victim_type,
+  value=nvictims,
+  DriversKilled, front,rear
+)
+head(df_long3)
+```
+
+```{r}
+ggplot(df_long3, aes(x=dates, y=nvictims, color =law, shape=law))+
+  geom_point()+
+  geom_smooth(se=FALSE)+
+  facet_wrap(~victim_type, ncol=1,scale="free_y")+
+  ggtitle("Oturma Pozisyonuna Göre Ölümleri")
+```
+```{r}
+CH<-data.frame(ChickWeight)
+str(CH)
+```
+```{r}
+CH$Diet<-NULL
+head(CH)
+```
+
+```{r}
+CH_wide<-dcast.data.table(as.data.table(CH), Chick~Time,
+                          value.var = "weight")
+head(CH_wide)
+```
+```{r}
+CH_wide2<-pivot_to_rowrecs(
+  CH,
+  columnToTakeKeysFrom = "Time",
+  columnToTakeValuesFrom = "weight",
+  rowKeyColumns = "Chick"
+  )
+head(CH_wide2)
+```
+
+```{r}
+CH_wide3<-spread(CH,
+                key=Time,
+                value = weight)
+head(CH_wide3)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

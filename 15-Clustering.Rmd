@@ -1,0 +1,63 @@
+---
+"Denetimsiz Yöntemler-Kümeleme (Unsupervised methods: Cluster Analysis)" 
+---
+
+```{r}
+protein<-read.table("protein.txt",sep = "\t", header = T)
+dim(protein)
+```
+```{r}
+head(protein)
+```
+```{r}
+X<-colnames(protein)[-1]
+pmatrix<-scale(protein[,X])
+summary(pmatrix)
+```
+```{r}
+pcenter<-attr(pmatrix, "scaled:center")
+pscale<-attr(pmatrix, "scaled:scale")
+```
+
+```{r}
+pcenter
+```
+```{r}
+pscale
+```
+```{r}
+attr(pmatrix, "scaled:center")<-NULL
+attr(pmatrix, "scaled:scale")<-NULL
+```
+
+```{r}
+distmat<-dist(pmatrix, method="euclidean")
+pfit<-hclust(distmat, method = "ward.D")
+plot(pfit,labels=protein$Country)
+rect.hclust(pfit,5)
+```
+```{r}
+groups<-cutree(pfit,k=5)
+print_clusters<-function(data,groups,columns){
+  groupedD<-split(data,groups)
+  lapply(groupedD, function(df) df[,columns])
+}
+cols_to_print<-wrapr::qc(Country, RedMeat, Fish, Fr.Veg)
+print_clusters(protein, groups, cols_to_print)
+```
+```{r}
+princ<-prcomp(pmatrix)
+nComp<-2
+project<-predict(princ, pmatrix)[, 1:nComp]
+project_plus<-cbind(as.data.frame(project), 
+                    cluster=as.factor(groups),
+                    country=protein$Country)
+library(ggplot2)
+ggplot(project_plus, aes(x=PC1,y=PC2))+
+  geom_point(data=as.data.frame(project), color="darkgrey")+
+  geom_point()+
+  geom_text(aes(label=country),hjust=0,vjust=1)+
+  facet_wrap(~cluster, ncol = 3, labeller = label_both)
+```
+
+

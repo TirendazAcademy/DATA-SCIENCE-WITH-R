@@ -1,0 +1,251 @@
+---
+"Regülerleştirme (Regularization) (Ridge & Lasso & Elastic Net)" 
+---
+
+```{r}
+cars<-read.csv("car.data.csv",sep=",",header = T, stringsAsFactors = T)
+head(cars)
+```
+```{r}
+str(cars)
+```
+```{r}
+X<-setdiff(colnames(cars),"rating")
+cars$fail<-cars$rating=="unacc"
+y<-"fail"
+```
+
+```{r}
+set.seed(1234)
+gp<-runif(nrow(cars))
+library("zeallot")
+c(cars_test,cars_train) %<-% split(cars, gp<0.7)
+nrow(cars_test)
+nrow(cars_train)
+```
+```{r}
+library(wrapr)
+f<-mk_formula(y,X)
+f
+```
+```{r}
+model_glm<-glm(f, 
+               data=cars_train,
+               family = binomial)
+```
+```{r}
+summary(model_glm)
+```
+```{r}
+coefs<-coef(model_glm)[-1]
+coef_frame<-data.frame(coef=names(coefs), value=coefs)
+library(ggplot2)
+ggplot(coef_frame, aes(x=coef, y=value))+
+  geom_pointrange(aes(ymin=0,ymax=value))+
+  ggtitle("Lojistik Regresyon Katsayıları")+
+  coord_flip()
+```
+```{r}
+cars_test$pred<-predict(model_glm,
+                        newdata = cars_test,
+                        type = "response")
+truth<-ifelse(cars_test$fail, "unacceptable","passed")
+prediction<-ifelse(cars_test[["pred"]]>0.5, "unacceptable","passed")
+cm<-table(truth,prediction)
+acc<-sum(diag(cm))/sum(cm)
+acc
+```
+```{r}
+library(glmnet)
+library(glmnetUtils)
+model_ridge<-cv.glmnet(f,cars_train,alpha=0,family="binomial")
+model_ridge
+```
+```{r}
+coef<-coef(model_ridge)
+coef
+```
+```{r}
+coefs<-coef(model_ridge)
+coef_frame<-data.frame(coef=rownames(coefs)[-1], value=coefs[-1,1])
+
+ggplot(coef_frame, aes(x=coef, y=value))+
+  geom_pointrange(aes(ymin=0,ymax=value))+
+  ggtitle("Ridge Regresyon Katsayıları")+
+  coord_flip()
+```
+
+```{r}
+prediction<-predict(model_ridge,
+                        newdata = cars_test,
+                        type = "response")
+cars_test$pred_ridge<-as.numeric(prediction)
+
+truth<-ifelse(cars_test$fail, "unacceptable","passed")
+prediction_ridge<-ifelse(
+  cars_test[["pred_ridge"]]>0.5, "unacceptable","passed")
+cm<-table(truth,prediction_ridge)
+acc<-sum(diag(cm))/sum(cm)
+acc
+```
+```{r}
+model_lasso<-cv.glmnet(f,cars_train,alpha=1,family="binomial")
+model_lasso
+```
+```{r}
+coefs<-coef(model_lasso)
+coef_frame<-data.frame(coef=rownames(coefs)[-1], value=coefs[-1,1])
+
+ggplot(coef_frame, aes(x=coef, y=value))+
+  geom_pointrange(aes(ymin=0,ymax=value))+
+  ggtitle("Lasso Regresyon Katsayıları")+
+  coord_flip()
+```
+
+```{r}
+prediction<-predict(model_lasso,
+                        newdata = cars_test,
+                        type = "response")
+cars_test$pred_lasso<-as.numeric(prediction)
+
+truth<-ifelse(cars_test$fail, "unacceptable","passed")
+prediction_lasso<-ifelse(
+  cars_test[["pred_lasso"]]>0.5, "unacceptable","passed")
+cm<-table(truth,prediction_lasso)
+acc<-sum(diag(cm))/sum(cm)
+acc
+```
+```{r}
+elastic_net<-cva.glmnet(f,cars_train, family="binomial")
+elastic_net
+```
+```{r}
+elastic_net$modlist
+```
+
+```{r}
+minlossplot(elastic_net)
+```
+```{r}
+best_alpha<-0.125
+model_enet<-cv.glmnet(f,cars_train,alpha = best_alpha, family="binomial")
+prediction<-predict(model_enet,
+                        newdata = cars_test,
+                        type = "response")
+cars_test$pred_enet<-as.numeric(prediction)
+
+truth<-ifelse(cars_test$fail, "unacceptable","passed")
+prediction_enet<-ifelse(
+  cars_test[["pred_enet"]]>0.5, "unacceptable","passed")
+cm<-table(truth,prediction_enet)
+acc<-sum(diag(cm))/sum(cm)
+acc
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

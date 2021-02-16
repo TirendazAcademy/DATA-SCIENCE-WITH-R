@@ -1,0 +1,280 @@
+---
+title: "Veri Mühendisliği (Data Engineering)" by Tirendaz Akademi
+---
+
+#Veri Seçimi
+
+```{r}
+summary(iris)
+```
+```{r}
+head(iris)
+```
+```{r}
+str(iris)
+```
+```{r}
+library("ggplot2")
+ggplot(iris,aes(x=Petal.Length,y=Petal.Width, shape=Species, color=Species))+
+  geom_point(size=2)+
+  ggtitle("Petal Boyutlar")
+```
+```{r}
+head(iris[iris$Petal.Length>2,c("Petal.Length","Petal.Width"), drop=FALSE])
+```
+
+```{r}
+head(iris[iris$Petal.Length>2,3:5, drop=FALSE])
+```
+```{r}
+library("data.table")
+df_dt<-as.data.table(iris)
+df_dt<-df_dt[iris$Petal.Length>2, c(3,4,5)]
+head(df_dt)
+```
+```{r}
+library("dplyr")
+df_dplyr<-iris %>% 
+  select(.,Petal.Length,Petal.Width,Species) %>% 
+  filter(.,Petal.Length>2)
+head(df_dplyr)
+```
+```{r}
+data(msleep)
+str(msleep)
+```
+```{r}
+summary(msleep)
+```
+```{r}
+clean_df<-msleep[complete.cases(msleep), , drop=FALSE]
+summary(clean_df)
+```
+```{r}
+nrow(clean_df)
+```
+```{r}
+nrow(msleep)
+```
+```{r}
+clean_df2<-na.omit(msleep)
+nrow(clean_df2)
+```
+```{r}
+msleep_df<-as.data.table(msleep)
+clean_dt<-msleep_df[complete.cases(msleep_df),]
+nrow(clean_dt)
+```
+```{r}
+clean_dplyr<-msleep %>% 
+  filter(.,complete.cases(.))
+nrow(clean_dplyr)
+```
+```{r}
+day<-c(1,2,2,1,2,1)
+hour<-c(9,9,11,13,13,14)
+n_purchase<-c(5,3,5,1,3,1)
+vs<-data.frame(day,hour,n_purchase)
+vs
+```
+```{r}
+order_index<-with(vs, order(day,hour))
+order_index
+```
+```{r}
+vs_ordered<-vs[order_index, , drop=FALSE]
+vs_ordered
+```
+```{r}
+vs_dt<-as.data.table(vs)
+order_cols<-c("day","hour")
+setorderv(vs_dt,order_cols)
+vs_dt
+```
+
+```{r}
+vs_dt<-vs_dt[, runnig_total := cumsum(n_purchase)]
+vs_dt
+```
+```{r}
+order_dplyr<-vs %>% 
+  arrange(.,day,hour)
+order_dplyr
+```
+#Temel Veri Dönüşümleri
+
+```{r}
+library("datasets")
+summary(airquality)
+```
+```{r}
+library("lubridate")
+datestr=function(day,month,year){
+  paste(day,month,year, sep = "-")
+}
+```
+
+```{r}
+airquality_with_date<-airquality
+airquality_with_date$date<-with(airquality_with_date, dmy(datestr(Day,Month, 1973)))
+head(airquality_with_date)
+```
+```{r}
+ggplot(airquality_with_date, aes(x=date, y=Ozone))+
+  geom_point()+
+  geom_line()+
+  xlab("Date")+
+  ggtitle("Ozon Değerleri")
+```
+
+```{r}
+library("wrapr")
+airquality %.>% transform(.,date=dmy(datestr(Day, Month, 1973))) %.>%
+  subset(.,!is.na(Ozone), select=c("Ozone","date")) %.>%
+  head(.)
+```
+```{r}
+DT_airquality<-as.data.table(airquality)[,date:=dmy(datestr(Day,Month,1973))][,c("Ozone","date")]
+head(DT_airquality)
+```
+```{r}
+airquality_with_date_2<-airquality %>% 
+  mutate(., date=dmy(datestr(Day, Month,1973))) %>% 
+  select(., Ozone, date)
+head(airquality_with_date_2)
+```
+```{r}
+A<-data.frame(x=1:5,y=6:10)
+A
+```
+
+```{r}
+colnames(A)<-c("Ali","Veli")
+A
+```
+
+```{r}
+A$Ali<-NULL
+A
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
