@@ -1,4 +1,4 @@
-# Data science and machine learning with R 2021
+# Data science and machine learning with R - 2021
 
 ## This repository holds R notebooks and datasets for data science tutorial.
 
