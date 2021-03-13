@@ -2,5 +2,5 @@
 
 This repository holds R notebooks and data sets for data science tutorial
 
-You can access videos of this tutorial https://www.udemy.com/user/tirendaz-akademi-2/ and https://youtube.com/tirendazakademi
+You can access videos of this tutorial [![](https://img.shields.io/badge/YouTube-Turkish-deeppink?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/tirendazakademi) and [![](https://img.shields.io/badge/Udemy-Education-darkgreen?style=for-the-badge)](https://www.udemy.com/user/tirendaz-akademi-2)
 
