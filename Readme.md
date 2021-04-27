@@ -1,3 +1,5 @@
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/R_logo.svg/800px-R_logo.svg.png)
+
 # Data science and machine learning with R - 2021
 
 ## This repository holds R notebooks and datasets for data science tutorial.
